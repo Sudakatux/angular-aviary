@@ -19,28 +19,40 @@
 
     function ngAviaryDirective(ngAviary) {
       return {
-        restrict: 'A',
+        restrict: 'E',
         scope: {
           targetSelector: '@',
           targetSrc: '@',
           onSave: '&',
-          onSaveButtonClicked: '&'
+          onSaveButtonClicked: '&',
+					appendTo: '@',
+					open:'=',
+          onReady: '&'
         },
         link: function (scope, element, attrs) {
-
+					//debugger;
           var targetImage = window.document.querySelector(scope.targetSelector);
+					
+					scope.$watch('open',function(newValue,oldValue){
+						
+						if(newValue === true){
+							setTimeout(function(){ 
+									console.log('I was clicked');
+								return launchEditor(); }, 2000);
+						}
+						
+					});
 
-          element.bind('click', function(e) {
-            e.preventDefault();
-            return launchEditor();
-          });
 
           // Callbacks obj
           var cbs = {
             onSaveButtonClicked: onSaveButtonClickedCb,
             onSave: onSaveCb,
             onError: onErrorCb,
-            onClose: onCloseCb
+            onClose: onCloseCb,
+			theme: 'minimum',
+            onReady: onReadyCb
+
           };
 
           var featherEditor = new Aviary.Feather(
@@ -48,10 +60,19 @@
           );
 
           function launchEditor() {
-            featherEditor.launch({
+            var options = {
               image: targetImage,
-              url: scope.targetSrc || targetImage.src
-            });
+							url: scope.targetSrc || targetImage.src
+            };
+						
+						if(scope.appendTo){
+							var container =  window.document.querySelector(scope.appendTo);
+							options.appendTo = container;
+						}
+						
+						featherEditor.launch(options);
+		
+						
             return false;
           }
 
@@ -70,6 +91,10 @@
             if(scope.closeOnSave || ngAviary.configuration.closeOnSave){
               featherEditor.close();
             }
+          }
+          
+          function onReadyCb(){
+            (scope.onReady || angular.noop)();
           }
 
           function onErrorCb(errorObj) {
